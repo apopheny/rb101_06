@@ -30,7 +30,7 @@ def initialize_board
 end
 
 def empty_squares(brd)
-  brd.keys.select{|num| brd[num] == INITIAL_MARKER }
+  brd.keys.select { |num| brd[num] == INITIAL_MARKER }
 end
 
 board = initialize_board
@@ -46,6 +46,45 @@ def player_places_piece!(brd)
   end
   brd[square] = PLAYER_MARKER
 end
-player_places_piece!(board)
+
+def computer_places_piece!(brd)
+  square = empty_squares(brd).sample
+  brd[square] = COMPUTER_MARKER
+end
+
+def someone_won?(brd)
+  !!detect_winner(brd)
+end
+
+def detect_winner(brd)
+  winning_lines = [
+    [1, 2, 3], [4, 5, 6], [7, 8, 9], # rows
+    [1, 4, 7], [2, 5, 8], [3, 6, 9], # columns
+    [1, 5, 9], [3, 5, 7]             # diagonals
+  ]
+  winning_lines.each do |line|
+    if brd[line] == PLAYER_MARKER
+      return 'Player'
+    elsif brd[line] == COMPUTER_MARKER
+      return 'Computer'
+    end
+    nil
+  end
+end
+
+loop do
+  break if someone_won?(board) || empty_squares(board).empty?
+  player_places_piece!(board)
+  display_board(board)
+  computer_places_piece!(board)
+  display_board(board)
+end
+
+if someone_won?(board)
+  prompt("#{detect_winner(board)} won!")
+else
+  prompt("It's a tie!")
+end
+
 p board.inspect
 display_board(board)
