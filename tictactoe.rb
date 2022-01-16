@@ -4,12 +4,18 @@ require 'pry-byebug'
 INITIAL_MARKER = ' '
 PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
+WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
+                [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
+                [[1, 5, 9], [3, 5, 7]]              # diagonals
+
 def prompt(msg)
   puts "=> #{msg}"
 end
-  
+
+# rubocop:disable Metrics/AbcSize
 def display_board(brd)
-  puts ""
+  system 'clear'
+  puts "You play #{PLAYER_MARKER}. Computer plays #{COMPUTER_MARKER}."
   puts "     |     |"
   puts "  #{brd[1]}  |  #{brd[2]}  |  #{brd[3]}"
   puts "     |     |"
@@ -22,6 +28,7 @@ def display_board(brd)
   puts "  #{brd[7]}  |  #{brd[8]}  |  #{brd[9]}"
   puts "     |     |"
 end
+# rubocop:enable Metrics/AbcSize
 
 def initialize_board
   new_board = {}
@@ -32,9 +39,6 @@ end
 def empty_squares(brd)
   brd.keys.select { |num| brd[num] == INITIAL_MARKER }
 end
-
-board = initialize_board
-display_board(board)
 
 def player_places_piece!(brd)
   square = ''
@@ -57,34 +61,40 @@ def someone_won?(brd)
 end
 
 def detect_winner(brd)
-  winning_lines = [
-    [1, 2, 3], [4, 5, 6], [7, 8, 9], # rows
-    [1, 4, 7], [2, 5, 8], [3, 6, 9], # columns
-    [1, 5, 9], [3, 5, 7]             # diagonals
-  ]
-  winning_lines.each do |line|
-    if brd[line] == PLAYER_MARKER
+  WINNING_LINES.each do |line|
+    if brd.values_at(*line).count(PLAYER_MARKER) == 3
       return 'Player'
-    elsif brd[line] == COMPUTER_MARKER
+    elsif brd.values_at(*line).count(PLAYER_MARKER) == 3
       return 'Computer'
     end
-    nil
   end
+  nil
 end
 
 loop do
-  break if someone_won?(board) || empty_squares(board).empty?
-  player_places_piece!(board)
+  board = initialize_board
+
+  loop do
+    display_board(board)
+
+    player_places_piece!(board)
+    break if (someone_won?(board)) || (empty_squares(board).empty?)
+
+    computer_places_piece!(board)
+    break if (someone_won?(board)) || (empty_squares(board).empty?)
+  end
+
   display_board(board)
-  computer_places_piece!(board)
-  display_board(board)
+
+  if someone_won?(board)
+    prompt("#{detect_winner(board)} won!")
+  else
+    prompt("It's a tie!")
+  end
+
+  prompt("Play again? (Y/N)")
+  answer = gets.chomp.upcase
+  break if answer[0] == "N"
 end
 
-if someone_won?(board)
-  prompt("#{detect_winner(board)} won!")
-else
-  prompt("It's a tie!")
-end
-
-p board.inspect
-display_board(board)
+prompt("Thanks for playing Tic Tac Toe. Goodbye!")
