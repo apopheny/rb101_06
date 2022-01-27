@@ -1,3 +1,24 @@
+# Improved "join"
+
+# If we run the current game, we'll see the following prompt:
+
+# => Choose a position to place a piece: 1, 2, 3, 4, 5, 6, 7, 8, 9
+
+# This is ok, but we'd like for this message to read a little better. We want to separate the last item with a "or", so that it reads:
+
+# => Choose a position to place a piece: 1, 2, 3, 4, 5, 6, 7, 8, or 9
+
+# Currently, we're using the Array#join method, which can only insert a delimiter between the array elements, and isn't smart enough to display a joining word for the last element.
+
+# Write a method called joinor that will produce the following result:
+
+# joinor([1, 2])                   # => "1 or 2"
+# joinor([1, 2, 3])                # => "1, 2, or 3"
+# joinor([1, 2, 3], '; ')          # => "1; 2; or 3"
+# joinor([1, 2, 3], ', ', 'and')   # => "1, 2, and 3"
+
+# Then, use this method in the TTT game when prompting the user to mark a square.
+
 require 'pry'
 require 'pry-byebug'
 
@@ -11,6 +32,22 @@ WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
 def prompt(msg)
   puts "=> #{msg}"
 end
+
+def joinor(board_arr, punct = ', ', and_or = 'or ')
+  if board_arr.size >= 3 && punct != '; '
+    and_or = 'and '
+  elsif board_arr.size >= 2 && punct == '; '
+    and_or = 'or '
+  else board_arr.size == 1
+    punct, and_or = ['', '']
+  end
+
+  result = board_arr.map do |selection|
+   selection == board_arr.last ? (and_or + selection.to_s) : selection.to_s + punct
+  end
+  result.join
+end
+
 
 # rubocop:disable Metrics/AbcSize
 def display_board(brd)
@@ -43,7 +80,7 @@ end
 def player_places_piece!(brd)
   square = ''
   loop do
-    prompt("Choose a square (#{empty_squares(brd).join(', ')}):")
+    prompt("Choose a square (#{joinor(empty_squares(brd), ', ', 'and ')}):")
     square = gets.chomp.to_i
     break if empty_squares(brd).include?(square)
     prompt("Sorry, that's not a valid choice.")
@@ -64,7 +101,7 @@ def detect_winner(brd)
   WINNING_LINES.each do |line|
     if brd.values_at(*line).count(PLAYER_MARKER) == 3
       return 'Player'
-    elsif brd.values_at(*line).count(PLAYER_MARKER) == 3
+    elsif brd.values_at(*line).count(COMPUTER_MARKER) == 3
       return 'Computer'
     end
   end
