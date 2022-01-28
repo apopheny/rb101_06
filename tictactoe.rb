@@ -1,23 +1,7 @@
-# Improved "join"
+# Computer AI: Defense
 
-# If we run the current game, we'll see the following prompt:
+# The computer currently picks a square at random. That's not very interesting. Let's make the computer defensive minded, so that if there's an immediate threat, then it will defend the 3rd square. We'll consider an "immediate threat" to be 2 squares marked by the opponent in a row. If there's no immediate threat, then it will just pick a random square.
 
-# => Choose a position to place a piece: 1, 2, 3, 4, 5, 6, 7, 8, 9
-
-# This is ok, but we'd like for this message to read a little better. We want to separate the last item with a "or", so that it reads:
-
-# => Choose a position to place a piece: 1, 2, 3, 4, 5, 6, 7, 8, or 9
-
-# Currently, we're using the Array#join method, which can only insert a delimiter between the array elements, and isn't smart enough to display a joining word for the last element.
-
-# Write a method called joinor that will produce the following result:
-
-# joinor([1, 2])                   # => "1 or 2"
-# joinor([1, 2, 3])                # => "1, 2, or 3"
-# joinor([1, 2, 3], '; ')          # => "1; 2; or 3"
-# joinor([1, 2, 3], ', ', 'and')   # => "1, 2, and 3"
-
-# Then, use this method in the TTT game when prompting the user to mark a square.
 
 require 'pry'
 require 'pry-byebug'
@@ -80,7 +64,7 @@ end
 def player_places_piece!(brd)
   square = ''
   loop do
-    prompt("Choose a square (#{joinor(empty_squares(brd), ', ', 'and ')}):")
+    prompt("Choose a square (#{joinor(empty_squares(brd), ', ')}):")
     square = gets.chomp.to_i
     break if empty_squares(brd).include?(square)
     prompt("Sorry, that's not a valid choice.")
@@ -88,8 +72,63 @@ def player_places_piece!(brd)
   brd[square] = PLAYER_MARKER
 end
 
+def computer_defense(brd)
+  choose = nil
+  loop do
+    if      (brd[3] == PLAYER_MARKER && brd[2] == PLAYER_MARKER) ||
+            (brd[5] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
+            (brd[7] == PLAYER_MARKER && brd[4] == PLAYER_MARKER)
+      choose = 1
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[3] == PLAYER_MARKER && brd[1] == PLAYER_MARKER) ||
+            (brd[8] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)
+      choose = 2
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[1] == PLAYER_MARKER && brd[2] == PLAYER_MARKER) ||
+            (brd[6] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
+            (brd[7] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)
+      choose = 3
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[5] == PLAYER_MARKER && brd[6] == PLAYER_MARKER) ||
+            (brd[1] == PLAYER_MARKER && brd[7] == PLAYER_MARKER)
+      choose = 4
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[4] == PLAYER_MARKER && brd[6] == PLAYER_MARKER) ||
+            (brd[3] == PLAYER_MARKER && brd[7] == PLAYER_MARKER) ||
+            (brd[1] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
+            (brd[2] == PLAYER_MARKER && brd[8] == PLAYER_MARKER)
+      choose = 5
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[4] == PLAYER_MARKER && brd[5] == PLAYER_MARKER) ||
+            (brd[3] == PLAYER_MARKER && brd[9] == PLAYER_MARKER)
+      choose = 6
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[8] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
+            (brd[1] == PLAYER_MARKER && brd[4] == PLAYER_MARKER) ||
+            (brd[3] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)       
+      choose = 7
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[7] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
+            (brd[5] == PLAYER_MARKER && brd[2] == PLAYER_MARKER)  
+      choose = 8
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    elsif   (brd[7] == PLAYER_MARKER && brd[8] == PLAYER_MARKER) ||
+            (brd[3] == PLAYER_MARKER && brd[6] == PLAYER_MARKER) ||
+            (brd[1] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)
+      choose = 9
+      empty_squares(brd).include?(choose) ? break : choose = nil
+    end
+    break
+  end
+  choose
+end
+
 def computer_places_piece!(brd)
-  square = empty_squares(brd).sample
+  if computer_defense(brd).class == Integer
+    square = computer_defense(brd)
+  else 
+    square = empty_squares(brd).sample
+  end
   brd[square] = COMPUTER_MARKER
 end
 
@@ -108,6 +147,9 @@ def detect_winner(brd)
   nil
 end
 
+player_victories = 0
+computer_victories = 0
+
 loop do
   board = initialize_board
 
@@ -124,14 +166,26 @@ loop do
   display_board(board)
 
   if someone_won?(board)
+    detect_winner(board) == 'Player' ? player_victories += 1 : computer_victories += 1
     prompt("#{detect_winner(board)} won!")
+    prompt("Player wins: #{player_victories}.")
+    prompt("Computer wins: #{computer_victories}.")
   else
     prompt("It's a tie!")
+    prompt("Player wins: #{player_victories}.")
+    prompt("Computer wins: #{computer_victories}.")
   end
 
+  
+  if player_victories == 5 || computer_victories == 5
+    prompt("#{detect_winner(board)} has won 5 games and wins the match!")
+    break
+  end
+  
   prompt("Play again? (Y/N)")
   answer = gets.chomp.upcase
   break if answer[0] == "N"
+
 end
 
 prompt("Thanks for playing Tic Tac Toe. Goodbye!")
