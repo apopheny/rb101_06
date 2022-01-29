@@ -1,8 +1,3 @@
-# Computer AI: Defense
-
-# The computer currently picks a square at random. That's not very interesting. Let's make the computer defensive minded, so that if there's an immediate threat, then it will defend the 3rd square. We'll consider an "immediate threat" to be 2 squares marked by the opponent in a row. If there's no immediate threat, then it will just pick a random square.
-
-
 require 'pry'
 require 'pry-byebug'
 
@@ -72,64 +67,37 @@ def player_places_piece!(brd)
   brd[square] = PLAYER_MARKER
 end
 
-def computer_defense(brd)
-  choose = nil
-  loop do
-    if      (brd[3] == PLAYER_MARKER && brd[2] == PLAYER_MARKER) ||
-            (brd[5] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
-            (brd[7] == PLAYER_MARKER && brd[4] == PLAYER_MARKER)
-      choose = 1
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[3] == PLAYER_MARKER && brd[1] == PLAYER_MARKER) ||
-            (brd[8] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)
-      choose = 2
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[1] == PLAYER_MARKER && brd[2] == PLAYER_MARKER) ||
-            (brd[6] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
-            (brd[7] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)
-      choose = 3
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[5] == PLAYER_MARKER && brd[6] == PLAYER_MARKER) ||
-            (brd[1] == PLAYER_MARKER && brd[7] == PLAYER_MARKER)
-      choose = 4
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[4] == PLAYER_MARKER && brd[6] == PLAYER_MARKER) ||
-            (brd[3] == PLAYER_MARKER && brd[7] == PLAYER_MARKER) ||
-            (brd[1] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
-            (brd[2] == PLAYER_MARKER && brd[8] == PLAYER_MARKER)
-      choose = 5
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[4] == PLAYER_MARKER && brd[5] == PLAYER_MARKER) ||
-            (brd[3] == PLAYER_MARKER && brd[9] == PLAYER_MARKER)
-      choose = 6
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[8] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
-            (brd[1] == PLAYER_MARKER && brd[4] == PLAYER_MARKER) ||
-            (brd[3] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)       
-      choose = 7
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[7] == PLAYER_MARKER && brd[9] == PLAYER_MARKER) ||
-            (brd[5] == PLAYER_MARKER && brd[2] == PLAYER_MARKER)  
-      choose = 8
-      empty_squares(brd).include?(choose) ? break : choose = nil
-    elsif   (brd[7] == PLAYER_MARKER && brd[8] == PLAYER_MARKER) ||
-            (brd[3] == PLAYER_MARKER && brd[6] == PLAYER_MARKER) ||
-            (brd[1] == PLAYER_MARKER && brd[5] == PLAYER_MARKER)
-      choose = 9
-      empty_squares(brd).include?(choose) ? break : choose = nil
+def computer_find_at_risk(brd)
+  WINNING_LINES.each do |line|
+    if brd.values_at(*line).count(COMPUTER_MARKER) == 2 &&
+      brd.values_at(*line).count(INITIAL_MARKER) == 1
+      
+      line.each do |move| 
+        if brd[move] == ' ' 
+            brd[move] = COMPUTER_MARKER
+            return true
+        end
+      end   
+    elsif brd.values_at(*line).count(PLAYER_MARKER) == 2 &&
+      brd.values_at(*line).count(INITIAL_MARKER) == 1
+      
+      line.each do |move| 
+        if brd[move] == ' ' 
+            brd[move] = COMPUTER_MARKER
+            return true
+        end
+      end   
+
     end
-    break
   end
-  choose
+  false
 end
 
 def computer_places_piece!(brd)
-  if computer_defense(brd).class == Integer
-    square = computer_defense(brd)
-  else 
-    square = empty_squares(brd).sample
+  if computer_find_at_risk(brd) == false 
+    brd[5] == ' ' ? square = 5 : square = empty_squares(brd).sample
+    brd[square] = COMPUTER_MARKER
   end
-  brd[square] = COMPUTER_MARKER
 end
 
 def someone_won?(brd)
@@ -150,17 +118,61 @@ end
 player_victories = 0
 computer_victories = 0
 
-loop do
-  board = initialize_board
-
+def player_first(board)
+  prompt('Player goes first.')
   loop do
-    display_board(board)
-
     player_places_piece!(board)
     break if (someone_won?(board)) || (empty_squares(board).empty?)
+    display_board(board)
 
     computer_places_piece!(board)
     break if (someone_won?(board)) || (empty_squares(board).empty?)
+    display_board(board)
+    
+  end
+
+end
+
+def computer_first(board)
+  loop do
+    computer_places_piece!(board)
+    break if (someone_won?(board)) || (empty_squares(board).empty?)
+    display_board(board)
+    
+    player_places_piece!(board)
+    break if (someone_won?(board)) || (empty_squares(board).empty?)
+    display_board(board)
+
+  end
+end
+
+loop do
+  board = initialize_board
+  answer = '1'
+  loop do
+    display_board(board)
+
+    loop do
+      prompt('Who goes first: (1) Player, (2) Computer, (3) Computer choice?')
+      answer = gets.chomp
+      break if %w(1 2 3).include?(answer)
+      prompt("Please select a valid response.")
+    end
+    
+    loop do
+      if answer == '1'
+        player_first(board)
+        break
+      elsif answer == '2'
+        computer_first(board)
+        break
+      else
+        answer = %w(1 2).sample
+        answer == '1' ? prompt('Computer has chosen Player') : prompt('Computer has chose Computer')
+      end
+    end
+
+    break
   end
 
   display_board(board)
