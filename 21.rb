@@ -32,13 +32,13 @@ end
 
 def total(hand)
   if hand.include?('Ace')
-    non_ace = hand.select { |card| card != 'Ace' && !card.nil? }
+    non_ace = hand.select { |card| card != 'Ace' }
     non_ace = non_ace.map { |card| value(card) }.sum
-    if hand.select { |card| card == 'Ace' && !card.nil? }.map.size < 2
-      ace = hand.select { |card| card == 'Ace' && !card.nil? }
+    if hand.select { |card| card == 'Ace' }.map.size < 2
+      ace = hand.select { |card| card == 'Ace' }
       ace = ace.map { |card| non_ace > 10 ? card = 1 : card = 11 }.sum
     else
-      (hand.select { |card| card == 'Ace' && !card.nil? }.map.size).times do
+      (hand.select { |card| card == 'Ace' }.map.size).times do
         non_ace + 11 > 21 ? non_ace += 1 : non_ace += 11
       end
       ace = 0
@@ -111,7 +111,7 @@ end
 def determine_winner(hand1, hand2)
   if bust?(hand1) == false && total(hand1) > total(hand2)
     'win'
-  elsif bust?(hand2) == false && total(hand2) > total(hand1)
+  elsif total(hand2) > total(hand1)
     'lose'
   elsif (total(hand1) == total(hand2)) || (bust?(hand1) && bust(hand2))
     'tie'
@@ -138,10 +138,6 @@ loop do
   system 'clear'
   deck = initialize_deck
   bust = false
-  player_hand = Array.new
-  dealer_hand = Array.new
-  player_total = 0
-  dealer_total = 0
   player_hand = [deal_card!(deck)]
   dealer_hand = [deal_card!(deck)]
   player_hand << deal_card!(deck)
@@ -161,10 +157,13 @@ loop do
     player_chips -= bet
     player_hand = Array.new
     dealer_hand = Array.new
-    prompt('Thanks for playing!')
     prompt('Play again? (Y/N)')
     play_again = gets.chomp
-    break if play_again.downcase.start_with?('n')
+    if play_again.downcase.start_with?('n')
+      prompt('Thanks for playing 21!')
+      prompt('Goodbye!')
+      break
+    end
   end
 
   dealer_turn(dealer_hand, player_hand, deck)
@@ -173,10 +172,13 @@ loop do
     player_chips += bet
     player_hand = Array.new
     dealer_hand = Array.new
-    prompt('Thanks for playing!')
     prompt('Play again? (Y/N)')
     play_again = gets.chomp
-    break if play_again.downcase.start_with?('n')
+    if play_again.downcase.start_with?('n')
+      prompt('Thanks for playing 21!')
+      prompt('Goodbye!')
+      break
+    end
   end
 
   system 'clear'
@@ -197,7 +199,7 @@ loop do
     elsif winner == 'lose'
       player_chips -= bet
       prompt('Dealer wins!')
-    elsif winner = 'tie'
+    elsif winner == 'tie'
       prompt("It's a tie!")
     end
   else
